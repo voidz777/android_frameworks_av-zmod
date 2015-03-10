@@ -48,6 +48,8 @@
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
 
+#include <cutils/properties.h>
+
 #include "include/avc_utils.h"
 
 namespace android {
@@ -2443,6 +2445,30 @@ status_t ACodec::setupVideoEncoder(const char *mime, const sp<AMessage> &msg) {
             || !msg->findInt32("bitrate", &bitrate)) {
         return INVALID_OPERATION;
     }
+
+    /* Hack to crop out green band that appears on devices (tuna) with 
+       unsupported hardware. This only "fixes" 1080p and 720p recording 
+       modes and resulting videos will be 32p and 64p smaller on the height
+       dimension. Build.prop key can enable or disable this, as well as 
+       override the crop dimensions entirely. Remove this after we get 
+       a proper fix.  */
+    if (property_get_bool("debug.video.crop_override", 0)) {
+    	int32_t propwidth = property_get_int32("debug.videoencoder.width", 0);
+    	int32_t propheight = property_get_int32("debug.videoencoder.height", 0);
+	if (propheight == 0) {
+	    if (height == 1080) {
+		height = 1048;
+	    } else if (height == 720) {
+		height = 656;
+	    }
+	} else if (propheight > 0) {
+	    height = propheight;
+	}
+	if (propwidth > 0) {
+	    width = propwidth;
+	}
+    }
+    //
 
     video_def->nFrameWidth = width;
     video_def->nFrameHeight = height;
