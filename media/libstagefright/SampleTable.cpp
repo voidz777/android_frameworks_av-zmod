@@ -234,7 +234,9 @@ status_t SampleTable::setSampleToChunkParams(
         return ERROR_OUT_OF_RANGE;
 
     mSampleToChunkEntries =
-        new SampleToChunkEntry[mNumSampleToChunkOffsets];
+        new (std::nothrow) SampleToChunkEntry[mNumSampleToChunkOffsets];
+    if (!mSampleToChunkEntries)
+        return ERROR_OUT_OF_RANGE;
 
     for (uint32_t i = 0; i < mNumSampleToChunkOffsets; ++i) {
         uint8_t buffer[12];
@@ -333,11 +335,13 @@ status_t SampleTable::setTimeToSampleParams(
     }
 
     mTimeToSampleCount = U32_AT(&header[4]);
-    uint64_t allocSize = mTimeToSampleCount * 2 * (uint64_t)sizeof(uint32_t);
+    uint64_t allocSize = (uint64_t)mTimeToSampleCount * 2 * sizeof(uint32_t);
     if (allocSize > SIZE_MAX) {
         return ERROR_OUT_OF_RANGE;
     }
-    mTimeToSample = new uint32_t[mTimeToSampleCount * 2];
+    mTimeToSample = new (std::nothrow) uint32_t[mTimeToSampleCount * 2];
+    if (!mTimeToSample)
+        return ERROR_OUT_OF_RANGE;
 
     size_t size = sizeof(uint32_t) * mTimeToSampleCount * 2;
     if (mDataSource->readAt(
@@ -379,12 +383,14 @@ status_t SampleTable::setCompositionTimeToSampleParams(
     }
 
     mNumCompositionTimeDeltaEntries = numEntries;
-    uint64_t allocSize = numEntries * 2 * (uint64_t)sizeof(uint32_t);
+    uint64_t allocSize = (uint64_t)numEntries * 2 * sizeof(uint32_t);
     if (allocSize > SIZE_MAX) {
         return ERROR_OUT_OF_RANGE;
     }
 
-    mCompositionTimeDeltaEntries = new uint32_t[2 * numEntries];
+    mCompositionTimeDeltaEntries = new (std::nothrow) uint32_t[2 * numEntries];
+    if (!mCompositionTimeDeltaEntries)
+        return ERROR_OUT_OF_RANGE;
 
     if (mDataSource->readAt(
                 data_offset + 8, mCompositionTimeDeltaEntries, numEntries * 8)
@@ -434,7 +440,10 @@ status_t SampleTable::setSyncSampleParams(off64_t data_offset, size_t data_size)
         return ERROR_OUT_OF_RANGE;
     }
 
-    mSyncSamples = new uint32_t[mNumSyncSamples];
+    mSyncSamples = new (std::nothrow) uint32_t[mNumSyncSamples];
+    if (!mSyncSamples)
+        return ERROR_OUT_OF_RANGE;
+
     size_t size = mNumSyncSamples * sizeof(uint32_t);
     if (mDataSource->readAt(mSyncSampleOffset + 8, mSyncSamples, size)
             != (ssize_t)size) {
@@ -502,7 +511,9 @@ void SampleTable::buildSampleEntriesTable() {
         return;
     }
 
-    mSampleTimeEntries = new SampleTimeEntry[mNumSampleSizes];
+    mSampleTimeEntries = new (std::nothrow) SampleTimeEntry[mNumSampleSizes];
+    if (!mSampleTimeEntries)
+        return;
 
     uint32_t sampleIndex = 0;
     uint32_t sampleTime = 0;
