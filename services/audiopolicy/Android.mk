@@ -1,5 +1,13 @@
 LOCAL_PATH:= $(call my-dir)
 
+ifeq ($(call is-vendor-board-platform,QCOM),true)
+
+ifeq ($(AUDIO_FEATURE_DEEP_BUFFER_RINGTONE),true)
+common_cflags += -DDEEP_BUFFER_RINGTONE
+endif
+
+endif
+
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES:= \
